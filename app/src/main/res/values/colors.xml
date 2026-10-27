@@ -1,0 +1,5 @@
+<resources>
+    <color name="ground">#111111</color>
+    <color name="surface">#1B1B1B</color>
+    <color name="accent">#BAED3F</color>
+</resources>
