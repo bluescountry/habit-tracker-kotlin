@@ -116,11 +116,17 @@ fun XpChartPanel(
     val isDemo = state.streakBase >= 12
     val claimedQuests = state.quests.filter { state.claimed.contains(it.id) }
     val todayXp = claimedQuests.sumOf { it.xp }
+    val dow = java.time.LocalDate.now().dayOfWeek.value
+    val todayIdx = (dow - 1).coerceIn(0, 6)
     val vals = if (isDemo) {
-        SeedData.WEEK_XP + todayXp
+        List(7) { idx ->
+            when {
+                idx < todayIdx -> SeedData.WEEK_XP.getOrElse(idx) { 0 }
+                idx == todayIdx -> todayXp
+                else -> 0
+            }
+        }
     } else {
-        val dow = java.time.LocalDate.now().dayOfWeek.value
-        val todayIdx = (dow - 1).coerceIn(0, 6)
         List(7) { idx -> if (idx == todayIdx) todayXp else 0 }
     }
     val dayNames = listOf("M", "T", "W", "T", "F", "S", "S")
@@ -196,7 +202,7 @@ fun XpChartPanel(
                 verticalAlignment = Alignment.Bottom
             ) {
                 vals.forEachIndexed { index, v ->
-                    val isToday = index == 6
+                    val isToday = index == todayIdx
                     val barHeightFraction = (v / maxVal).coerceIn(0f, 1f)
                     val barColor = if (isToday) Dq.Accent else Dq.BarPast
 
@@ -237,7 +243,7 @@ fun XpChartPanel(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             dayNames.forEachIndexed { index, name ->
-                val isToday = index == 6
+                val isToday = index == todayIdx
                 Text(
                     text = name,
                     fontFamily = Sans,
@@ -340,19 +346,26 @@ fun FiveWeeksHeatmapPanel(
     modifier: Modifier = Modifier
 ) {
     val isDemo = state.streakBase >= 12
-    val totalDays = if (isDemo) {
-        if (state.securedToday) 35 else 34
-    } else {
-        1
-    }
-    val missed = if (isDemo) SeedData.MISSED_INDICES else (0 until 34).toSet()
+    val dow = java.time.LocalDate.now().dayOfWeek.value
+    val todayIdx = (dow - 1).coerceIn(0, 6)
+    val todayHeatmapIdx = 4 * 7 + todayIdx
 
-    val doneDays = if (isDemo) {
-        (0 until 35).count { i ->
-            if (i == 34) state.securedToday else !missed.contains(i)
-        }
+    val totalDays = if (isDemo) {
+        todayHeatmapIdx + 1
     } else {
-        if (state.securedToday) 1 else 0
+        minOf(state.streak, todayHeatmapIdx + 1).coerceAtLeast(1)
+    }
+    val missed = if (isDemo) SeedData.MISSED_INDICES else emptySet()
+
+    val doneDays = (0..todayHeatmapIdx).count { idx ->
+        if (idx == todayHeatmapIdx) {
+            state.securedToday
+        } else if (isDemo) {
+            !missed.contains(idx)
+        } else {
+            val daysAgo = todayHeatmapIdx - idx
+            state.streakBase >= daysAgo
+        }
     }
 
     Column(
@@ -415,8 +428,20 @@ fun FiveWeeksHeatmapPanel(
             ) {
                 for (col in 0 until 7) {
                     val idx = row * 7 + col
-                    val isToday = idx == 34
-                    val isOn = if (isToday) state.securedToday else !missed.contains(idx)
+                    val isToday = idx == todayHeatmapIdx
+                    val isPast = idx < todayHeatmapIdx
+                    val isOn = when {
+                        isToday -> state.securedToday
+                        isPast -> {
+                            if (isDemo) {
+                                !missed.contains(idx)
+                            } else {
+                                val daysAgo = todayHeatmapIdx - idx
+                                state.streakBase >= daysAgo
+                            }
+                        }
+                        else -> false
+                    }
 
                     val dotModifier = when {
                         isOn -> Modifier

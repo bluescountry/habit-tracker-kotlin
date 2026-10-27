@@ -30,6 +30,7 @@ import com.dayquest.domain.validReward
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.withContext
@@ -44,8 +45,14 @@ class DayquestRepository(
 ) {
     val db: DayquestDb get() = dbHolder.db
 
+    private val _dateTick = MutableStateFlow(0L)
+
+    fun refreshDate() {
+        _dateTick.value = System.currentTimeMillis()
+    }
+
     fun observe(): Flow<AppState?> {
-        return dbHolder.dbVersion.flatMapLatest {
+        return combine(dbHolder.dbVersion, _dateTick) { v, _ -> v }.flatMapLatest {
             val database = dbHolder.db
             val today = LocalDate.now(clock).toString()
 

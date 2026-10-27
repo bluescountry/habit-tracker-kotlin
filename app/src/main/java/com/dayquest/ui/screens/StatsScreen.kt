@@ -34,9 +34,20 @@ fun StatsScreen(
     val isDemo = state.streakBase >= 12
     val claimedQuests = state.quests.filter { state.claimed.contains(it.id) }
     val todayXp = claimedQuests.sumOf { it.xp }
-    val weekTotal = (if (isDemo) SeedData.WEEK_XP.sum() else 0) + todayXp
+    val dow = java.time.LocalDate.now().dayOfWeek.value
+    val todayIdx = (dow - 1).coerceIn(0, 6)
+    val pastWeekXp = if (isDemo) {
+        (0 until todayIdx).sumOf { SeedData.WEEK_XP.getOrElse(it) { 0 } }
+    } else {
+        0
+    }
+    val weekTotal = pastWeekXp + todayXp
+
+    val todayDate = java.time.LocalDate.now()
+    val mondayDate = todayDate.minusDays(todayIdx.toLong())
+    val monthName = mondayDate.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
     val subtitleText = if (isDemo) {
-        String.format(Locale.US, "Week of 19 Oct · %,d XP so far", weekTotal)
+        String.format(Locale.US, "Week of %d %s · %,d XP so far", mondayDate.dayOfMonth, monthName, weekTotal)
     } else {
         String.format(Locale.US, "This week · %,d XP so far", weekTotal)
     }

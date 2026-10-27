@@ -16,10 +16,12 @@ import com.dayquest.domain.GoalSlot
 import com.dayquest.domain.LibraryItem
 import com.dayquest.domain.Quest
 import com.dayquest.domain.RankStyle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class Toast(val message: String, val undoQuestId: String? = null)
@@ -71,6 +73,23 @@ class MainViewModel(
                 }
             }
         }
+
+        // Ticker to automatically refresh date at midnight while the app is open
+        viewModelScope.launch {
+            var lastDay = java.time.LocalDate.now().toString()
+            while (isActive) {
+                delay(30_000)
+                val currentDay = java.time.LocalDate.now().toString()
+                if (currentDay != lastDay) {
+                    lastDay = currentDay
+                    repo.refreshDate()
+                }
+            }
+        }
+    }
+
+    fun onResume() {
+        repo.refreshDate()
     }
 
     fun selectTab(tab: Int) = _ui.update { it.copy(selectedTab = tab) }

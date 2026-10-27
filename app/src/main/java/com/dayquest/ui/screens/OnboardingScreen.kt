@@ -216,8 +216,15 @@ fun OnboardingScreen(
 
                 Spacer(Modifier.height(10.dp))
 
+                val hour = java.time.LocalTime.now().hour
+                val greeting = when (hour) {
+                    in 4..11 -> "Morning"
+                    in 12..16 -> "Afternoon"
+                    else -> "Evening"
+                }
+
                 Text(
-                    text = "Morning, $previewName.",
+                    text = "$greeting, $previewName.",
                     fontFamily = Serif,
                     fontSize = 34.sp,
                     lineHeight = 38.sp,

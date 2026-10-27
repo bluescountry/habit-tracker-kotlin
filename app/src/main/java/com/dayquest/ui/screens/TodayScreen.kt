@@ -33,6 +33,7 @@ import com.dayquest.R
 import com.dayquest.domain.AppState
 import com.dayquest.ui.components.LevelPanel
 import com.dayquest.ui.components.QuestTile
+import java.util.Locale
 import com.dayquest.ui.components.StreakPanel
 import com.dayquest.ui.theme.CardShape
 import com.dayquest.ui.theme.Dq
@@ -71,6 +72,18 @@ fun TodayScreen(
 
     val waitingRewards = state.earned.entries.filter { !it.value.enjoyed }
 
+    val todayDate = java.time.LocalDate.now()
+    val dayName = todayDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.FULL, Locale.getDefault())
+    val monthName = todayDate.month.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault())
+    val dateLabel = "$dayName, ${todayDate.dayOfMonth} $monthName"
+
+    val hour = java.time.LocalTime.now().hour
+    val greeting = when (hour) {
+        in 4..11 -> "Morning"
+        in 12..16 -> "Afternoon"
+        else -> "Evening"
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -88,7 +101,16 @@ fun TodayScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Morning, ${state.name.ifEmpty { "Sam" }}.",
+                        text = dateLabel.uppercase(Locale.getDefault()),
+                        fontFamily = Sans,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.8.sp,
+                        color = Dq.Muted
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = "$greeting, ${state.name.ifEmpty { "Sam" }}.",
                         fontFamily = Serif,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Normal,

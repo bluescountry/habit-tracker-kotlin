@@ -83,6 +83,11 @@ class MainActivity : ComponentActivity() {
         MainViewModelFactory(repo, backup)
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.onResume()
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

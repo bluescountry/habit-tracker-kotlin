@@ -38,6 +38,9 @@ fun StreakPanel(
     val streakNote = if (state.securedToday) "Secured for today" else "Today still open"
     val dayLetters = listOf("M", "T", "W", "T", "F", "S", "S")
 
+    val dow = java.time.LocalDate.now().dayOfWeek.value // 1 = Monday, ..., 7 = Sunday
+    val todayIdx = (dow - 1).coerceIn(0, 6)
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -72,28 +75,33 @@ fun StreakPanel(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            val daysBeforeToday = state.streakBase.coerceAtMost(6)
             dayLetters.forEachIndexed { index, letter ->
-                val isToday = index == 6
-                val isOn = if (isToday) state.securedToday else (index < daysBeforeToday)
+                val isToday = index == todayIdx
+                val isPast = index < todayIdx
+                val isOn = when {
+                    isToday -> state.securedToday
+                    isPast -> {
+                        val daysAgo = todayIdx - index
+                        state.streakBase >= daysAgo
+                    }
+                    else -> false
+                }
 
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    val dotModifier = if (isOn) {
-                        Modifier
+                    val dotModifier = when {
+                        isOn -> Modifier
                             .size(30.dp)
                             .clip(CircleShape)
                             .background(Dq.Accent)
-                    } else if (isToday) {
-                        Modifier
+                        isToday -> Modifier
                             .size(30.dp)
                             .clip(CircleShape)
                             .background(Dq.Surface)
                             .border(1.5.dp, Dq.Text, CircleShape)
-                    } else {
-                        Modifier
+                        else -> Modifier
                             .size(30.dp)
                             .clip(CircleShape)
                             .background(Dq.Track)
